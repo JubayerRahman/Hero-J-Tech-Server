@@ -86,9 +86,15 @@ async function run() {
         query = {payedMonth:req.query.data}
       }
       const salary = TechSalary.find(query)
-      const result = await salary.toArray()
+      const page = parseInt(req.query.page)
+      const size = parseInt(req.query.size)
+      const result = await salary
+      .skip(page *size)
+      .limit(size)
+      .toArray()
       res.send(result)
     })
+
     app.post("/salary", async(req, res)=>{
       const data = req.body;
       const result = await TechSalary.insertOne(data)
@@ -159,8 +165,10 @@ app.post("/chackout", async(req, res)=>{
     payment_method_types:["card"],
     line_items: [lineItmes] ,
     mode: 'payment',
-    success_url: `http://localhost:5173/employee-list`,
-    cancel_url: `http://localhost:5173/employee-list`,
+    // success_url: `http://localhost:5173/employee-list`,
+    // cancel_url: `http://localhost:5173/employee-list`,
+    success_url: `https://hero-j-tech.web.app/employee-list`,
+    cancel_url: `https://hero-j-tech.web.app/employee-list`,
   })
 
   res.json({id:session.id})
