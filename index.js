@@ -35,6 +35,7 @@ async function run() {
 
     const TechEmployeeList = client.db("Hero-J-Tech").collection("employee")
     const TechSalary = client.db("Hero-J-Tech").collection("salary")
+    const TechWorks = client.db("Hero-J-Tech").collection("works")
 
     //all eplooyes
 
@@ -42,6 +43,9 @@ async function run() {
       let query = {}
       if (req.query?.email) {
         query = {email:req.query.email}
+      }
+      if (req.query?.role) {
+        query = {role:req.query.role}
       }
         const employeeData = TechEmployeeList.find(query)
         const result = await employeeData.toArray()
@@ -101,8 +105,29 @@ async function run() {
       res.send(result)
     })
 
+    // work Api
 
-    
+    app.get("/work", async(req, res)=>{
+      let query = {}
+      if (req.query?.email) {
+        query={email: req.query.email}
+      } 
+      const page = parseInt(req.query.page)
+      const size = parseInt(req.query.size)
+      const data = TechWorks.find(query)
+      const result = await data
+      .skip(page*size)
+      .limit(size)
+      .toArray()
+      res.send(result)
+    })
+
+    app.post("/work", async(req, res)=>{
+      const data = req.body
+      const result = await TechWorks.insertOne(data)
+      res.send(result)
+    })
+
 
 
 
