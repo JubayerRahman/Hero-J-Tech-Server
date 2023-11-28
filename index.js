@@ -71,9 +71,7 @@ async function run() {
       const option = {upsert:true}
       const updateData = req.body
       const employeeData = {
-        $set:{
-          varification: updateData.varification
-        }
+        $set:updateData
       }
       const result = await TechEmployeeList.updateOne(filter, employeeData, option)
       res.send(result)
@@ -109,9 +107,13 @@ async function run() {
 
     app.get("/work", async(req, res)=>{
       let query = {}
-      if (req.query?.email) {
-        query={email: req.query.email}
-      } 
+      if (req.query?.email && req.query?.month) {
+        query = { email: req.query.email, month: req.query.month };
+      } else if (req.query?.email) {
+        query = { email: req.query.email };
+      } else if (req.query?.month) {
+        query = { month: req.query.month };
+      }
       const page = parseInt(req.query.page)
       const size = parseInt(req.query.size)
       const data = TechWorks.find(query)
@@ -192,8 +194,8 @@ app.post("/chackout", async(req, res)=>{
     mode: 'payment',
     // success_url: `http://localhost:5173/employee-list`,
     // cancel_url: `http://localhost:5173/employee-list`,
-    success_url: `https://hero-j-tech.web.app/employee-list`,
-    cancel_url: `https://hero-j-tech.web.app/employee-list`,
+    success_url: `https://hero-j-tech.web.app/Dashboard/employee-list`,
+    cancel_url: `https://hero-j-tech.web.app/Dashboard/employee-list`,
   })
 
   res.json({id:session.id})
