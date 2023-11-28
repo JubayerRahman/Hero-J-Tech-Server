@@ -2,6 +2,8 @@ const express = require("express")
 const cors = require("cors")
 const stripe = require("stripe")("sk_test_51K7EeJSAZSYJA0jhezXoAUTcmj5XN8oU4IPhUQzMS9IAbVWjW7MQGO3xDdvnzNTQFrdkhh2JNLSuV5DOozM8PZDr00uBKw51EW")
 const app = express()
+const jwt = require("jsonwebtoken")
+const cookieParser = require("cookie-parser")
 require("dotenv").config()
 const port = process.env.port || 5000
 
@@ -10,9 +12,27 @@ app.use(cors({
         'http://localhost:5173',
         'https://hero-j-tech.web.app',
         'https://hero-j-tech.firebaseapp.com'
-    ]
+    ],
+  credentials: true
 }))
 app.use(express.json())
+app.use(cookieParser())
+
+const verifySecret =(req, res, next) =>{
+  const token = req.cookies?.tokan
+  console.log("cookie: ", token)
+  if(!token){
+    return res.status(401).send({messsgae:"unauthorize"})
+  }
+  jwt.verify(token, process.env.AUTH_SECRET, (err, decoded)=>{
+    if (err) {
+      return res.status(403).send({message:"Not valod"})
+    }
+    // console.log(decoded.email.length);
+    req.user = decoded
+    next();
+  })
+}
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -36,6 +56,29 @@ async function run() {
     const TechEmployeeList = client.db("Hero-J-Tech").collection("employee")
     const TechSalary = client.db("Hero-J-Tech").collection("salary")
     const TechWorks = client.db("Hero-J-Tech").collection("works")
+
+     //authentication api
+     app.post("/jwt", async(req, res)=>{
+      const UserData = req.body;
+      const token = jwt.sign(UserData, process.env.AUTH_SECRET, {expiresIn:"2h"})
+      console.log(token)
+      res
+      .cookie("tokan", token, {
+        httpOnly:true,
+        secure:true,
+        sameSite: "none"
+      })
+      .send({status:"Success"})
+    })
+    
+    app.post("/logout", async(req, res)=>{
+      const userData = req.body
+      console.log(userData);
+      res
+      // .clearCookie("tokan", {maxAge:0})
+      .clearCookie("token", {maxAge:0})
+      .send({status:"success"})
+    })
 
     //all eplooyes
 
@@ -81,10 +124,13 @@ async function run() {
     app.get("/salary", async(req, res)=>{
       let query = ""
       console.log(req.query.data);
-      if (req.query?.email) {
+      if (req.query?.email && req.query?.data) {
+        query = { email: req.query.email, payedMonth: req.query.data };
+      }
+      else if (req.query?.email) {
         query = {email:req.query.email}
       }
-      if (req.query?.data) {
+      else if (req.query?.data) {
         query = {payedMonth:req.query.data}
       }
       const salary = TechSalary.find(query)
